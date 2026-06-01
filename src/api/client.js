@@ -1,8 +1,21 @@
 import axios from "axios";
 
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const isBrowser = typeof window !== "undefined";
+const isLocalHost =
+  isBrowser && ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+
+function apiBaseUrl() {
+  if (rawApiBaseUrl) return rawApiBaseUrl.replace(/\/$/, "");
+  if (isLocalHost) return "http://localhost:5000/api";
+  return "/api";
+}
+
+const apiUrl = apiBaseUrl();
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-  timeout: 10000
+  baseURL: apiUrl,
+  withCredentials: true,
 });
 
 export function setAuthToken(token) {
@@ -17,7 +30,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.code === "ERR_NETWORK") {
-      error.message = `Cannot connect to Noted API at ${api.defaults.baseURL}. Start the backend and keep MongoDB connected.`;
+      error.message = isLocalHost
+        ? `Cannot connect to Noted API at ${api.defaults.baseURL}. Start the backend and keep MongoDB connected.`
+        : `Cannot connect to Noted API at ${api.defaults.baseURL}. Set VITE_API_BASE_URL to your deployed backend URL ending in /api, then redeploy.`;
     }
 
     if (error.code === "ECONNABORTED") {
