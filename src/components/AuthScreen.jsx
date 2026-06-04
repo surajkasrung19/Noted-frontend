@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { KeyRound, Lock, LogIn, MailCheck, NotebookPen, UserPlus } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Lock, LogIn, MailCheck, NotebookPen, UserPlus } from "lucide-react";
 import {
   forgotPassword,
   login,
@@ -17,6 +17,7 @@ export default function AuthScreen({ onAuthed }) {
   const [message, setMessage] = useState("");
   const [needsVerification, setNeedsVerification] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const resetTokenRef = useRef(new URLSearchParams(window.location.search).get("resetToken") || "");
 
   const isSignup = mode === "signup";
@@ -84,8 +85,10 @@ export default function AuthScreen({ onAuthed }) {
       if (isSignup) {
         const result = await signup(form);
         setMessage(result.message || "Account created. Please verify your email before logging in.");
+        setNeedsVerification(result.emailSent === false);
         setMode("login");
         setForm((current) => ({ ...current, name: "", password: "" }));
+        setPasswordVisible(false);
         return;
       }
 
@@ -109,7 +112,7 @@ export default function AuthScreen({ onAuthed }) {
     try {
       const result = await resendVerification({ email: form.email });
       setMessage(result.message);
-      setNeedsVerification(false);
+      setNeedsVerification(result.emailSent === false);
     } catch (requestError) {
       setError(requestError?.response?.data?.message || requestError.message || "Could not send verification email");
     } finally {
@@ -177,14 +180,25 @@ export default function AuthScreen({ onAuthed }) {
             {!isForgot ? (
               <label>
                 Password
-                <input
-                  value={form.password}
-                  onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                  placeholder="At least 8 characters"
-                  type="password"
-                  minLength={8}
-                  required
-                />
+                <div className="password-field">
+                  <input
+                    value={form.password}
+                    onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                    placeholder="At least 8 characters"
+                    type={passwordVisible ? "text" : "password"}
+                    minLength={8}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setPasswordVisible((visible) => !visible)}
+                    aria-label={passwordVisible ? "Hide password" : "Show password"}
+                    title={passwordVisible ? "Hide password" : "Show password"}
+                  >
+                    {passwordVisible ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
               </label>
             ) : null}
 
@@ -222,6 +236,8 @@ export default function AuthScreen({ onAuthed }) {
             onClick={() => {
               setError("");
               setMessage("");
+              setNeedsVerification(false);
+              setPasswordVisible(false);
               setMode(isSignup || isForgot || isReset ? "login" : "signup");
             }}
           >
@@ -234,6 +250,8 @@ export default function AuthScreen({ onAuthed }) {
               onClick={() => {
                 setError("");
                 setMessage("");
+                setNeedsVerification(false);
+                setPasswordVisible(false);
                 setMode("forgot");
               }}
             >
