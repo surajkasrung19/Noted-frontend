@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
 const isBrowser = typeof window !== "undefined";
 const isLocalHost =
   isBrowser && ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
@@ -55,16 +55,6 @@ export async function signup(payload) {
 
 export async function login(payload) {
   const { data } = await api.post("/auth/login", payload);
-  return data;
-}
-
-export async function verifyEmail(payload) {
-  const { data } = await api.post("/auth/verify-email", payload);
-  return data;
-}
-
-export async function resendVerification(payload) {
-  const { data } = await api.post("/auth/resend-verification", payload);
   return data;
 }
 
